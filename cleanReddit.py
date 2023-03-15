@@ -59,47 +59,37 @@ def wsb_words(date='today'):
         if element in words:
             stock_lower.remove(element)
 
-    #stocks = stock + stock_lower
-
     for i in stock:
         df[i] = df["text"].str.contains(i, regex=False, case=False)
 
     group_by_timestamp = df.groupby("timestamp").agg({i: 'sum' for i in stock})
 
-    #reduced_stock_list = ['GME', 'AAL', 'AAPL', 'AMD', 'APHA', 'BILI',
-     #                 'CLOV', 'DKNG', 'ECOR', 'FB', 'INO', 'JD', 'MSFT',
-      #                'MVIS', 'NAKD', 'PLUG', 'SNDL', 'TLRY', 'TSLA', 'WKHS', 'ZM']
-    #reduced_stock_df = filtered[reduced_stock_list]
-    
-    #print(reduced_stock_df)
 
     # convert to csv and sql database
     # filtered.to_csv('reddit_with_stocks.csv')
     
     #df = pd.read_csv('reddit_with_stocks.csv')
-    conn = sqlite3.connect('cleaned_reddit_and_twitter.db')
+    conn = sqlite3.connect('cleaned_reddit_twitter_stock.db')
     c = conn.cursor()
 
-    # Insert the data from the pandas dataframe to the SQL database
+    # Insert reddit data
     group_by_timestamp.to_sql('reddit_posts_with_ticker', conn, if_exists='replace', index=True)
 
-    # twitter stock data
-
+    # twitter and ticker data
     twitter_dataframe = pd.read_csv('./cleanedtwitterdata.csv')
     twitter_dataframe.to_sql('twitter_posts_with_ticker', conn, if_exists='replace', index=False)
+
+    # Insert stock data
+    yahoo_1_dataframe = pd.read_csv('./yahoo_stock_1.csv')
+    yahoo_1_dataframe.to_sql('yahoo_stocks_2020', conn, if_exists='replace', index=False)
+    yahoo_2_dataframe = pd.read_csv('./yahoo_stock_2.csv')
+    yahoo_2_dataframe.to_sql('yahoo_stock_2021', conn, if_exists='replace', index=False)
+
 
     # Close the connection to the database
     conn.close()
     
-    
-    # conn = sqlite3.connect('test_database_for_reddit')
-    # c = conn.cursor()
-    # c.execute('CREATE TABLE IF NOT EXISTS redditPosts (id INT, score INT, timestamp TEXT, post TEXT, terms TEXT)')
-    # conn.commit()
-    # df.to_sql('redditPosts', conn, if_exists='replace', index=False)
 
-    #with open('redditSQL.sql', 'w') as file:
-     #   file.write(filedata)
 
 
 
