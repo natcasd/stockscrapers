@@ -61,70 +61,81 @@ def wsb_words(date='today'):
 
     filtered = df.groupby("timestamp").agg({i: 'sum' for i in stock})
 
-
-    print(filtered)
-    print(filtered.sum())
-
-
-    """
-    sorted_values = np.sort(df['timestamp'].unique())
-    print("len dataframe: " + str(len(df)))
-
-
-    lista_valori = []
+    reduced_stock_list = ['GME', 'AAL', 'AAPL', 'AMD', 'APHA', 'BILI',
+                      'CLOV', 'DKNG', 'ECOR', 'FB', 'INO', 'JD', 'MSFT',
+                      'MVIS', 'NAKD', 'PLUG', 'SNDL', 'TLRY', 'TSLA', 'WKHS', 'ZM']
+    reduced_stock_df = filtered[reduced_stock_list]
     
-    if date == 'today':
-        df = df[df['timestamp'] == sorted_values[-1]]
-    elif date == 'all':
-        pass
-    else:
-        df = df[df['timestamp'] == date]
+    print(reduced_stock_df)
 
-    jx = []
-    ix = []
-
-    for j in range(0, len(df['text'])):
-        for i in ((df['text'].iloc[j]).split()):
-            if i in stocks:
-                jx.append(j)
-                ix.append(i)
-
-    df_termini = pd.DataFrame({"indici": jx, "valori": ix})
-
-    lista_termini = []
-    print("len dataframe: " + str(len(df)) )
-    for i in range(0, len(df)):
-        lista_termini.append(df_termini['valori'][df_termini['indici'] == i].tolist())
-
-    
-    #df['terms'] = lista_termini
-    df['terms'] = ['0'] * len(df)
-    df['terms'] = df['terms'].apply(lambda x: list(set(x)))
-
-    df['terms'] = df['terms'].apply(lambda x: ' '.join(map(str, x)))
-    df['terms'] = df['terms'].apply(lambda x: ' '.join([word for word in x.split() if word not in ('I')]))
-
-    df['text'] = df['text'].apply(lambda x: x.lower())
-    #stop = stopwords.words('english')
-    #df['text'] = df['text'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
-    df['text'] = df['text'].apply(lambda x: re.sub(r"http\S+", "", x))
-    df['text'] = df['text'].apply(lambda x: ' '.join([word for word in x.split() if word not in (
-    '[', ']', 'array', 'will', '######(**[click', '–', "i'm", '&#x200b;', '&nbsp;', '-', 'FOR', 'To', 'it.', '/',
-    'would', 'for', 'HERE', '&#x200B;', 'Array', '*****', '-', 'So', 'If', 'since', 'In', '######(**[CLICK', 'It',
-    'You', 'What', 'And', 'lot', 'Some', 'got', 'it’s', '#', 'This', '>', '*', 'Is', 'They', 'My', 'Why', 'How', 'THIS',
-    'going', "I'm", 'I’m', 'get', 'IS', 'We', 'WE', '-', 'I', 'THE', 'The', 'TO', 'A', 'AND', 'NOT', '🚀🚀🚀', '🚀',
-    '🚀🚀')]))
-    """
 
 
     # convert to csv and sql database
-    filtered.sum().to_csv('reddit_with_stocks.csv')
+    # filtered.to_csv('reddit_with_stocks.csv')
+    
+    df = pd.read_csv('reddit_with_stocks.csv')
 
-    conn = sqlite3.connect('test_database_for_reddit')
+    conn = sqlite3.connect('/Users/hunteradrian/school/cs1951A/DEV-ENVIRONMENT/final-project-stock-scrapers/stocks.db')
+    
     c = conn.cursor()
-    c.execute('CREATE TABLE IF NOT EXISTS redditPosts (id INT, score INT, timestamp TEXT, post TEXT, terms TEXT)')
-    conn.commit()
-    df.to_sql('redditPosts', conn, if_exists='replace', index=False)
+    
+    # c.execute('''CREATE TABLE IF NOT EXISTS stocks
+    #             (timestamp DATE, {} REAL)'''.format(' REAL, '.join(reduced_stock_list)))
+    
+    # columns = ""
+    # for s in reduced_stock_df:
+    #     columns += s + " REAL, "
+    # columns = columns[:-2]  # remove the last comma and space
+    # sql = f"CREATE TABLE IF NOT EXISTS stocks (timestamp DATE, {columns})"
+    # c.execute(sql)
+    
+    c.execute('''CREATE TABLE IF NOT EXISTS stocks
+        (timestamp DATE,
+        GME REAL,
+        AAL REAL,
+        AAPL REAL,
+        AMD REAL,
+        APHA REAL,
+        BILI REAL,
+        CLOV REAL,
+        DKNG REAL,
+        ECOR REAL,
+        FB REAL,
+        INO REAL,
+        JD REAL,
+        MSFT REAL,
+        MVIS REAL,
+        NAKD REAL,
+        PLUG REAL,
+        SNDL REAL,
+        TLRY REAL,
+        TSLA REAL,
+        WKHS REAL,
+        ZM REAL)''')
+
+    # c.execute('''CREATE TABLE IF NOT EXISTS stocks
+    #             (timestamp DATE, GME REAL, AAL REAL, AAPL REAL, ABNB REAL, ACST REAL, AIKI REAL, AMD REAL, AMRN REAL, AMRS REAL, APHA REAL, ASRT REAL,
+    #             ATNX REAL, ATOS REAL, AVGR REAL, AZN REAL, BIDU REAL, BILI REAL, BIOL REAL, BNGO REAL, BYND REAL, CAN REAL, CFMS REAL, CHFS REAL,
+    #             CIDM REAL, CLOV REAL, CRBP REAL, CTRM REAL, CTXR REAL, DFFN REAL, DGLY REAL, DKNG REAL, EBON REAL, ECOR REAL, FB REAL, FCEL REAL,
+    #             FGEN REAL, FRSX REAL, FUTU REAL, GEVO REAL, HEPA REAL, HIMX REAL, IDEX REAL, INO REAL, INPX REAL, INSG REAL, INTC REAL, ITRM REAL,
+    #             JCS REAL, JD REAL, KMPH REAL, KOPN REAL, KXIN REAL, LI REAL, LKCO REAL, MARA REAL, MICT REAL, MIK REAL, MNKD REAL, MRNA REAL, MSFT REAL,
+    #             MU REAL, MVIS REAL, NAKD REAL, NBRV REAL, NEPT REAL, NKLA REAL, NNDM REAL, NOVN REAL, NXTD REAL, OCGN REAL, OGI REAL, ONTX REAL,
+    #             PDD REAL, PERI REAL, PLUG REAL, POWW REAL, PYPL REAL, RDHL REAL, RIOT REAL, ROKU REAL, SHIP REAL, SIRI REAL, SLGG REAL, SNDL REAL,
+    #             SRNE REAL, SSKN REAL, TELL REAL, TIGR REAL, TLRY REAL, TNXP REAL, TRCH REAL, TSLA REAL, TXMD REAL, UAL REAL, VACQ REAL, VISL REAL,
+    #             VTRS REAL, VUZI REAL, WIMI REAL, WKHS REAL, ZM REAL, )''')
+
+    # Insert the data from the pandas dataframe to the SQL database
+    reduced_stock_df.to_sql('stocks', conn, if_exists='replace', index=False)
+
+    # Close the connection to the database
+    conn.close()
+    
+    
+    # conn = sqlite3.connect('test_database_for_reddit')
+    # c = conn.cursor()
+    # c.execute('CREATE TABLE IF NOT EXISTS redditPosts (id INT, score INT, timestamp TEXT, post TEXT, terms TEXT)')
+    # conn.commit()
+    # df.to_sql('redditPosts', conn, if_exists='replace', index=False)
 
     #with open('redditSQL.sql', 'w') as file:
      #   file.write(filedata)
