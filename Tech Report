@@ -1,0 +1,47 @@
+Data Cleanliness:
+We know that our data is clean because we didn’t use the raw data from the databases, we had
+a mechanism to clean the data. Since the data for the reddit posts and the twitter posts did
+not contain which stocks were mentioned in each data point, we had to create a script that would
+create columns whose values depended on whether or not the text contained the stock. After doing this,
+we summed along each stock column for each day to get the number of times each stock was mentioned
+each day.  Since we did this mechanism, and we are only using the true values from the sum, our data
+is clean because it would have to be in order to satisfy the conditions to be true. When we were reading
+in the twitter database, the .csv file had missing values for certain lines. This caused the
+pd.read_csv() function to error, and we had to set the argument error_bad_lines to false to get rid
+of these missing values. This did not affect the end result though because we had many more data points
+to take its place.
+
+The ticker SPY was pulled in the twitter database as a variety of different tickers, so those columns
+had to be combined to get the number of SPY mentions per day. Besides that, there were no duplicates.
+The data is skewed towards more popular tickers, as they get more mentions. $SPY got the most mentions
+in the twitter dataset, and $GME got the most mentions in the reddit dataset. The max/min mentions for
+SPY were 4238/576 and the max/min mentions for GME were 4676/0. In the context of our analysis, these
+are neither outliers or skewed data because we are analyzing each stock individually, not considering the
+relationships between stocks. There are no data type issues. We had to throw some of the data away. For some
+of the tickers in the Reddit database, the name of the ticker was a very common combination of letters, so
+when we searched for the ticker in the strings of posts, it would register as appearing in an artificially
+large amount of them. Since the data on mentions for these stocks were not accurate, we had to throw them away.
+This will not affect the analyses/conclusions because we still have a multitude of other stocks we can look at.
+
+Challenges and Changes to Analysis:
+A challenge we had was determining whether or not the number of stock mentions was right or if it was
+occurring because the stock ticker was a common combination of letters. We had to go through all of
+the stocks individually and assess whether the number of mentions made sense, given the popularity of
+the stock and the names of the tickers. In doing our data analysis, it became apparent to us that doing
+sentiment analysis on all of the text from all of the tweets/reddit posts would not be feasible. This
+affected our analysis because we were originally going to use the posts as a signal of the stock going
+up or down using sentiment analysis, but now since we can’t use sentiment analysis, we are just going to
+look at tweet/post volume and how that affects the volatility of a stock (up or down)
+
+Hypotheses:
+    1) When stocks are mentioned more than usual on social media sites, the stock price will experience higher
+        volatility in the following days.
+    2) There is a positive correlation between the number of stock mentions on social media sites and
+        volatility of the stock.
+    3) There will be a greater correlation between number of stock mentions and volatility for stocks under
+        a market cap of $20 billion.
+
+Machine learning component:
+    We will use a linear regression and a logistic regression as our two machine learning methods in this
+    project. For both of these regressions, we assign the independent variable as the number of stock mentions
+    and our dependent variable as the volatility of the stock 3 days later or in the range of the next week.
