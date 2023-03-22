@@ -1,3 +1,36 @@
+Tech Report
+
+Our data includes four databases: Yahoo Stock Data for 2021, Reddit posts with the number of mentions
+for 2021, Yahoo Stock Data for 2020, and Twitter posts with the number of mentions for 2020.
+
+The Yahoo Stock Data for 2020 contains records for 69 different days in 2020 for 27 stocks, resulting
+in a total of 1863 data points. For each date and stock, the percent change per day is measured.
+
+Our other database for 2020 counts the number of stock mentions from 923,673 Twitter posts. The database
+contains records for 77 different days in 2020 for each stock mentioned in the Yahoo Stock Data for 2020
+database, resulting in a total of 2079 data points. For each date and stock, the number of mentions is recorded.
+
+The Yahoo Stock Data for 2021 contains records for 141 different days in 2021 for 21 stocks, resulting
+in a total of 2961 data points. For each date and stock, the percent change per day is measured.
+
+Our other database for 2021 counts the number of stock mentions from 53,188 Reddit posts. The database
+contains records for 177 different days in 2021 for each stock mentioned in the Yahoo Stock Data for
+2021 database, resulting in a total of 3717 data points. For each date and stock, the number of mentions
+is recorded.
+
+In total, we have 10,620 data points: 3,942 for 2020 and 6,678 for 2021. Although the data points
+are not evenly split between the two years, this should not affect our results as the two groups are being analyzed independently of each other. I believe that the data we have collected is sufficient to analyze trends in the stock market.
+
+Identifying Attributes:
+Dates: 2020 and 2021
+Stocks:
+Yahoo Stock Data for 2020: $GME, $AAL, $AAPL, $AMD, $APHA, $BILI, $CLOV, $DKNG, $ECOR, $FB, $INO, $JD, $MSFT, $MVIS, $NAKD, $PLUG, $SNDL, $TLRY, $TSLA, $WKHS, $ZM
+Yahoo Stock Data for 2021: $MSFT, REAL, $AAPL, $AMZN, $FB, $BBRK.B, $GOOG, $JNJ, $JPM, $V, $PG, $MA, $INTC, $UNH, $BAC, $T, $HD, $XOM, $DIS, $VZ, $KO, $MRK, $CMCSA, $CVX, $PEP, $PFE, $SPY
+Metrics for each date and stock
+the percent change per day is measured for the Yahoo Stock Data
+The number of mentions is recorded for the Twitter and Reddit posts.
+
+
 Data Cleanliness:
 We know that our data is clean because we didn’t use the raw data from the databases, we had
 a mechanism to clean the data. Since the data for the reddit posts and the twitter posts did
