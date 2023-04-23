@@ -63,7 +63,7 @@ def wsb_words(date='today'):
         df[i] = df["text"].str.contains(i, regex=False, case=False)
 
     group_by_timestamp = df.groupby("timestamp").agg({i: 'sum' for i in stock})
-
+    group_by_timestamp.columns = [x.lower() for x in stock]
 
     # convert to csv and sql database
     # filtered.to_csv('reddit_with_stocks.csv')
@@ -79,6 +79,10 @@ def wsb_words(date='today'):
     twitter_dataframe = pd.read_csv('./cleanedtwitterdata.csv')
     twitter_dataframe.drop_duplicates(inplace=True)
     twitter_dataframe.drop(columns=['$BBRK.B'], inplace=True)
+
+    column_names = twitter_dataframe.columns
+    twitter_dataframe.columns = [x.replace('$', '').lower() for x in column_names]
+
     twitter_dataframe.to_sql('twitter_posts_with_ticker', conn, if_exists='replace', index=False)
 
     # Insert stock data
