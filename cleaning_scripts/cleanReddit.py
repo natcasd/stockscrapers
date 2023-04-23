@@ -65,6 +65,8 @@ def wsb_words(date='today'):
     group_by_timestamp = df.groupby("timestamp").agg({i: 'sum' for i in stock})
     group_by_timestamp.columns = [x.lower() for x in stock]
 
+    generate_big_table(group_by_timestamp)
+
     # convert to csv and sql database
     # filtered.to_csv('reddit_with_stocks.csv')
     
@@ -113,5 +115,28 @@ def wsb_words(date='today'):
 #     plt.axis('off')
 #     plt.show()
 #     return(counter)
+
+
+def generate_big_table(df):
+    mean = list(df.mean(axis=0))
+    std = list(df.std())
+
+    list_data = df.values
+    stock_list = df.columns
+    timestamps = df.index
+
+    build_time_stock = []
+    for row in range(len(list_data)):  # for each row
+        for col in range(len(list_data[0])):  # for each col
+            num_mentions = list_data[row][col]
+            if num_mentions > std[col] + mean[col]:
+                build_time_stock.append([timestamps[row], stock_list[col], num_mentions])
+
+    print(build_time_stock)
+
+
+
+
+
 
 wsb_words()
