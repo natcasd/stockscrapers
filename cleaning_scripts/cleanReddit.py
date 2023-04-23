@@ -78,6 +78,7 @@ def wsb_words(date='today'):
     # twitter and ticker data
     twitter_dataframe = pd.read_csv('./cleanedtwitterdata.csv')
     twitter_dataframe.drop_duplicates(inplace=True)
+    twitter_dataframe.drop(columns=['$BBRK.B'], inplace=True)
     twitter_dataframe.to_sql('twitter_posts_with_ticker', conn, if_exists='replace', index=False)
 
     # Insert stock data
