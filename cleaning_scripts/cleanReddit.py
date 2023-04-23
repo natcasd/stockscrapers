@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 
 def wsb_words(date='today'):
-    df = pd.read_csv('./raw_databases/reddit_wsb.csv')
+    df = pd.read_csv('../raw_databases/reddit_wsb.csv')
     df = df.drop(columns=['created', 'id', 'url', 'comms_num'])
     df['body'] = df['body'].fillna("")
     df['text'] = df['title'] + ' ' + df['body']
@@ -77,12 +77,15 @@ def wsb_words(date='today'):
 
     # twitter and ticker data
     twitter_dataframe = pd.read_csv('./cleanedtwitterdata.csv')
+    twitter_dataframe.drop_duplicates(inplace=True)
     twitter_dataframe.to_sql('twitter_posts_with_ticker', conn, if_exists='replace', index=False)
 
     # Insert stock data
     yahoo_1_dataframe = pd.read_csv('./yahoo_stock_1.csv')
+    yahoo_1_dataframe.drop_duplicates(inplace=True)
     yahoo_1_dataframe.to_sql('yahoo_stocks_2020', conn, if_exists='replace', index=False)
     yahoo_2_dataframe = pd.read_csv('./yahoo_stock_2.csv')
+    yahoo_2_dataframe.drop_duplicates(inplace=True)
     yahoo_2_dataframe.to_sql('yahoo_stock_2021', conn, if_exists='replace', index=False)
 
 
