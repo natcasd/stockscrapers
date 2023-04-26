@@ -5,15 +5,17 @@ from collections import Counter
 import nltk
 from datetime import datetime, timedelta
 from scipy.stats import ttest_1samp, ttest_ind, ttest_rel, chi2_contingency
-#from util import train_test_split
+# from util import train_test_split
 
-#from nltk.corpus import stopwords
-#nltk.download('stopwords')
-#from nltk.tokenize import word_tokenize
+# from nltk.corpus import stopwords
+# nltk.download('stopwords')
+# from nltk.tokenize import word_tokenize
 
 import re
 import matplotlib.pyplot as plt
-#from wordcloud import WordCloud, STOPWORDS
+
+
+# from wordcloud import WordCloud, STOPWORDS
 
 
 def wsb_words(date='today'):
@@ -24,10 +26,16 @@ def wsb_words(date='today'):
     df = df.drop(columns=['body', 'title'])
     df['timestamp'] = df['timestamp'].apply(lambda x: x[0:10])
 
-    stock = ["GME","AAL","AAPL","ABNB","ACST","AIKI","AMD","AMRN","AMRS","APHA","ASRT","ATNX","ATOS","AVGR","AZN","BIDU","BILI","BIOL","BNGO","BYND","CAN",
-          "CFMS","CHFS","CIDM","CLOV","CRBP","CTRM","CTXR","DFFN","DGLY","DKNG","EBON","ECOR","FB","FCEL","FGEN","FRSX","FUTU","GEVO","HEPA","HIMX",
-          "IDEX","INO","INPX","INSG","INTC","ITRM","JCS","JD","KMPH","KOPN","KXIN","LI","LKCO","MARA","MICT","MIK","MNKD","MRNA","MSFT","MU","MVIS","NAKD","NBRV","NEPT","NKLA","NNDM","NOVN","NXTD","OCGN","OGI","ONTX",
-          "PDD","PERI","PLUG","POWW","PYPL","RDHL","RIOT","ROKU","SHIP","SIRI","SLGG","SNDL","SRNE","SSKN","TELL","TIGR","TLRY","TNXP","TRCH","TSLA","TXMD","UAL","VACQ","VISL","VTRS","VUZI","WIMI","WKHS","ZM"]
+    stock = ["GME", "AAL", "AAPL", "ABNB", "ACST", "AIKI", "AMD", "AMRN", "AMRS", "APHA", "ASRT", "ATNX", "ATOS",
+             "AVGR", "AZN", "BIDU", "BILI", "BIOL", "BNGO", "BYND", "CAN",
+             "CFMS", "CHFS", "CIDM", "CLOV", "CRBP", "CTRM", "CTXR", "DFFN", "DGLY", "DKNG", "EBON", "ECOR", "FB",
+             "FCEL", "FGEN", "FRSX", "FUTU", "GEVO", "HEPA", "HIMX",
+             "IDEX", "INO", "INPX", "INSG", "INTC", "ITRM", "JCS", "JD", "KMPH", "KOPN", "KXIN", "LI", "LKCO", "MARA",
+             "MICT", "MIK", "MNKD", "MRNA", "MSFT", "MU", "MVIS", "NAKD", "NBRV", "NEPT", "NKLA", "NNDM", "NOVN",
+             "NXTD", "OCGN", "OGI", "ONTX",
+             "PDD", "PERI", "PLUG", "POWW", "PYPL", "RDHL", "RIOT", "ROKU", "SHIP", "SIRI", "SLGG", "SNDL", "SRNE",
+             "SSKN", "TELL", "TIGR", "TLRY", "TNXP", "TRCH", "TSLA", "TXMD", "UAL", "VACQ", "VISL", "VTRS", "VUZI",
+             "WIMI", "WKHS", "ZM"]
 
     #     stock = pd.read_csv('../input/stock-market-dataset/symbols_valid_meta.csv')
     #     stock = stock['Symbol'].tolist()
@@ -41,11 +49,10 @@ def wsb_words(date='today'):
     #         if element in words:
     #             stocks.remove(element)
 
-    #stock = (pd.read_csv('../input/amex-nyse-nasdaq-stock-histories/all_symbols.txt').iloc[:, 0]).to_list()
+    # stock = (pd.read_csv('../input/amex-nyse-nasdaq-stock-histories/all_symbols.txt').iloc[:, 0]).to_list()
     stock = ['GME', 'AAL', 'AAPL', 'AMD', 'APHA', 'BILI',
-                          'CLOV', 'DKNG', 'ECOR', 'FB', 'INO', 'JD', 'MSFT',
-                          'MVIS', 'PLUG', 'CENN', 'SNDL', 'TLRY', 'TSLA', 'WKHS', 'ZM']
-
+             'CLOV', 'DKNG', 'ECOR', 'FB', 'INO', 'JD', 'MSFT',
+             'MVIS', 'PLUG', 'CENN', 'SNDL', 'TLRY', 'TSLA', 'WKHS', 'ZM']
 
     stock_lower = [x.lower() for x in stock]
     words = ["an", "the", "of", "and", "a", "to", "in", "is", "you", "that", "it", "he", "was", "for", "on", "are",
@@ -70,13 +77,14 @@ def wsb_words(date='today'):
     lower_names = [x.lower() for x in stock]
 
     # we changed apha to aph and fb to meta
-    lower_names = ['gme', 'aal', 'aapl', 'amd', 'aph', 'bili', 'clov', 'dkng', 'ecor', 'meta', 'ino', 'jd', 'msft', 'mvis', 'cenn', 'plug', 'sndl', 'tlry', 'tsla', 'wkhs', 'zm']
+    lower_names = ['gme', 'aal', 'aapl', 'amd', 'aph', 'bili', 'clov', 'dkng', 'ecor', 'meta', 'ino', 'jd', 'msft',
+                   'mvis', 'cenn', 'plug', 'sndl', 'tlry', 'tsla', 'wkhs', 'zm']
     group_by_timestamp.columns = lower_names
 
     # convert to csv and sql database
     # filtered.to_csv('reddit_with_stocks.csv')
-    
-    #df = pd.read_csv('reddit_with_stocks.csv')
+
+    # df = pd.read_csv('reddit_with_stocks.csv')
     conn = sqlite3.connect('cleaned_reddit_twitter_stock.db')
     c = conn.cursor()
 
@@ -102,107 +110,54 @@ def wsb_words(date='today'):
     yahoo_2_dataframe.drop_duplicates(inplace=True)
     yahoo_2_dataframe.to_sql('yahoo_stock_2021', conn, if_exists='replace', index=False)
 
-
     # Close the connection to the database
     conn.close()
-
 
     ################################################################################
     ################################################################################
     # GENERATING ANALYSIS DATA
-
-
-    # HYPOTHESIS 2
-    reddit_df = reddit_generate_pairs(group_by_timestamp, yahoo_2_dataframe)
-    reddit_df = reddit_merge_volatility(reddit_df, yahoo_2_dataframe)
-    red_day_plus_one_col = list(reddit_df['dayplus1vol'])
-    red_play_minus_one_col = list(reddit_df['dayminus1vol'])
-
-    red_day_plus_one_col = [abs(x) for x in red_day_plus_one_col]
-    red_play_minus_one_col = [abs(x) for x in red_play_minus_one_col]
-
-    twitter_timestamp_stock_pairs = twitter_generate_pairs(twitter_dataframe, yahoo_1_dataframe)
-    twitter_timestamp_stock_pairs = twitter_merge_volatility(twitter_timestamp_stock_pairs, yahoo_1_dataframe)
-    twit_day_plus_one_col = list(twitter_timestamp_stock_pairs['dayplus1vol'])
-    twit_play_minus_one_col = list(twitter_timestamp_stock_pairs['dayminus1vol'])
-
-    avg1 = sum(twit_day_plus_one_col)/len(twit_day_plus_one_col)
-    avg2 = sum(twit_play_minus_one_col)/len(twit_play_minus_one_col)
-
-    full_plus_one = red_day_plus_one_col + twit_day_plus_one_col
-    full_minus_one = red_play_minus_one_col + twit_play_minus_one_col
-
-    avg1 = sum(full_plus_one) / len(full_plus_one)
-    avg2 = sum(full_minus_one) / len(full_minus_one)
-
-    # THE BIG TEST
-    tstats, pvalue = ttest_rel(twit_day_plus_one_col, twit_play_minus_one_col)
-
-
-    #"""
-    print("T-statistics: ", tstats)
-    print("p-value: ", pvalue)
-    print("p-value < 0.05", pvalue < 0.05)
-    #"""
-
-    ################################################################################
-    # HYPOTHESIS 3
-    reddit_df = reddit_generate_pairs(group_by_timestamp, yahoo_2_dataframe)
-    reddit_df = reddit_merge_volatility(reddit_df, yahoo_2_dataframe)
-    smaller_reddit_df = reddit_df[(reddit_df['stock'] == 'aapl') |
-                                  (reddit_df['stock'] == 'meta') |
-                                  (reddit_df['stock'] == 'msft')]
-    plus_one_red_list = list(smaller_reddit_df['dayplus1vol'])
-
-    twitter_df = twitter_timestamp_stock_pairs
-    smaller_twitter_df = twitter_df[(twitter_df['stock'] == 'aapl') |
-                                  (twitter_df['stock'] == 'meta') |
-                                  (twitter_df['stock'] == 'msft')]
-
-    list_twit = list(smaller_twitter_df['dayplus1vol'])
-
-    tstats, pvalue = ttest_ind(plus_one_red_list, list_twit)
-    #print("ttest: " + str(tstats))
-    #print("pvalue: " + str(pvalue))
-
-
-    ################################################################################
-    # LINEAR REGRESSION
-
-    #normalized = normalize_mentions(reddit_df)
-    #print(normalized)
-
-    ################################################################################
     # HYPOTHESIS 1
 
     # There is a statistical difference between the volatility levels corresponding
     # to days after a low number of mentions and volatility levels days after a high
     # number of mentions. (two sample t test)
 
+    reddit_above_std = reddit_generate_pairs(group_by_timestamp, yahoo_2_dataframe, True)
+    reddit_above_std = reddit_merge_volatility(reddit_above_std, yahoo_2_dataframe)
+    red_above_col = list(reddit_above_std['dayplus1vol'])
 
-    #normalized = normalize_mentions(reddit_df)
-    #print(normalized)
+    reddit_below_std = reddit_generate_pairs(group_by_timestamp, yahoo_2_dataframe, False)
+    reddit_below_std = reddit_merge_volatility(reddit_below_std, yahoo_2_dataframe)
+    red_below_col = list(reddit_below_std['dayplus1vol'])
+
+    twit_copy = twitter_dataframe.copy()
+    twitter_above_std = twitter_generate_pairs(twitter_dataframe, yahoo_1_dataframe, True)
+    twitter_above_std = twitter_merge_volatility(twitter_above_std, yahoo_1_dataframe)
+    twit_above_col = list(twitter_above_std['dayplus1vol'])
+
+    twitter_below_std = twitter_generate_pairs(twit_copy, yahoo_1_dataframe, False)
+    twitter_below_std = twitter_merge_volatility(twitter_below_std, yahoo_1_dataframe)
+    twit_below_col = list(twitter_below_std['dayplus1vol'])
+
+    full_above = red_above_col + twit_above_col
+    full_below = red_below_col + twit_below_col
+    full_above = [abs(x) for x in full_above]
+    full_below = [abs(x) for x in full_below]
+    print("avg above: " + str(sum(full_above)/len(full_above)))
+    print("avg below: " + str(sum(full_below)/len(full_below)))
 
 
-
-
+    tstats, pvalue = ttest_ind(full_above, full_below)
+    print("ttest: " + str(tstats))
+    print("pvalue: " + str(pvalue))
 
     ################################################################################
     ################################################################################
 
     return (df)
 
-def normalize_mentions(df):
-    normalized_df = (df - df.mean()) / df.std()
-    return normalized_df
-    columns = list(df.columns)
-    for i in columns[1:]:
-        column = df.loc[:, i]
-        print(column)
-        df.loc[:, i] = (column-column.min())/(column.max()-column.min())
-    return df
 
-def reddit_generate_pairs(df, yahoo_2_dataframe):
+def reddit_generate_pairs(df, yahoo_2_dataframe, above_bool):
     mean = list(df.mean(axis=0))
     std = list(df.std())
 
@@ -214,11 +169,17 @@ def reddit_generate_pairs(df, yahoo_2_dataframe):
     for row in range(len(list_data)):  # for each row
         for col in range(len(list_data[0])):  # for each col
             num_mentions = list_data[row][col]
-            if num_mentions > std[col] + mean[col]:
+            #print("nummentions: " + str(num_mentions))
+            #print("mean - std " + str(mean[col] - std[col]))
+            if num_mentions > std[col] + mean[col] and above_bool:
                 build_time_stock.append([timestamps[row], stock_list[col], num_mentions])
+            if num_mentions < mean[col] and not above_bool:
+                build_time_stock.append([timestamps[row], stock_list[col], num_mentions])
+                #print("this triggered")
 
     new_df = pd.DataFrame(build_time_stock, columns=['timestamp', 'stock', 'num_mentions'])
     return new_df
+
 
 def reddit_merge_volatility(new_df, yahoo_2_dataframe):
     # NATHAN CODE
@@ -251,8 +212,7 @@ def reddit_merge_volatility(new_df, yahoo_2_dataframe):
     return new_df
 
 
-
-def twitter_generate_pairs(df, yahoo_1_dataframe):
+def twitter_generate_pairs(df, yahoo_1_dataframe, above_bool):
     # formatting for twitter is different than for reddit so we had to drop
     # the timestamps column
     timestamps = list(df.loc[:, "created_at"])
@@ -268,7 +228,9 @@ def twitter_generate_pairs(df, yahoo_1_dataframe):
     for row in range(len(list_data)):  # for each row
         for col in range(len(list_data[0])):  # for each col
             num_mentions = list_data[row][col]
-            if num_mentions > std[col] + mean[col]:
+            if num_mentions > std[col] + mean[col] and above_bool:  # > std[col] + mean[col]
+                build_time_stock.append([timestamps[row], stock_list[col], num_mentions])
+            if num_mentions < mean[col] and not above_bool:
                 build_time_stock.append([timestamps[row], stock_list[col], num_mentions])
 
     new_df = pd.DataFrame(build_time_stock, columns=['timestamp', 'stock', 'num_mentions'])
