@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 import random
 from sklearn.metrics import r2_score
+from matplotlib import cm
 
 #from nltk.corpus import stopwords
 #nltk.download('stopwords')
@@ -145,8 +146,11 @@ def wsb_words(date='today'):
 
     K=5
     #KMEANS
-    print(twtrmvol)
-    #kmeans = KMeans(n_clusters=K).fit(X) #X is 2d array (num_samples, num_features)
+    features = twtrmvol[['num_mentions', 'dayplus1vol', 'Trading Volume']].to_numpy()
+    print(features)
+    kmeans = KMeans(n_clusters=K).fit(features) #X is 2d array (num_samples, num_features)
+    clusters, centroid_indices = kmeans.cluster_centers_, kmeans.labels_
+    plot_features_clusters(data=features,centroids=clusters,centroid_indices=centroid_indices)
 
 
     # HYPOTHESIS 2
@@ -233,6 +237,52 @@ def train_test_split(df, train_pct=0.8):
     """
     msk = np.random.rand(len(df)) < train_pct
     return df[msk], df[~msk]
+
+def plot_features_clusters(data, centroids=None, centroid_indices=None):
+    """
+    Visualizes the song data points and (optionally) the calculated k-means
+    cluster centers.
+    Points with the same color are considered to be in the same cluster.
+
+    Optionally providing centroid locations and centroid indices will color the
+    data points to match their respective cluster and plot the given centroids.
+    Otherwise, only the raw data points will be plotted.
+
+    :param data: 2D numpy array of song data
+    :param centroids: 2D numpy array of centroid locations
+    :param centroid_indices: 1D numpy array of centroid indices for each data point in data
+    :return:
+    """
+    MAX_CLUSTERS = 10
+    cmap = cm.get_cmap('tab10', MAX_CLUSTERS)
+    def plot_songs(fig, color_map=None):
+        x, y, z = np.hsplit(data, 3)
+        fig.scatter(x, y, z, c=color_map)
+
+    def plot_clusters(fig):
+        x, y, z = np.hsplit(centroids, 3)
+        fig.scatter(x, y, z, c="black", marker="x", alpha=1, s=200)
+
+    cluster_plot = centroids is not None and centroid_indices is not None
+
+    ax = plt.figure(num=1).add_subplot(111, projection='3d')
+    colors_s = None
+
+    if cluster_plot:
+        colors_s = [cmap(l / 100) for l in centroid_indices]
+        plot_clusters(ax)
+
+    plot_songs(ax, colors_s)
+
+    ax.set_xlabel('# of mentions')
+    ax.set_ylabel('Volatility 1 Day Later')
+    ax.set_zlabel('Average Volume')
+
+    ax.set_title('KMeans Visualization')
+    
+    # Helps visualize clusters
+    plt.gca().invert_xaxis()
+    plt.show()
 
 
 def reddit_generate_pairs(df, yahoo_2_dataframe):
