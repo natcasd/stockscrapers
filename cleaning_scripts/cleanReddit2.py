@@ -5,6 +5,12 @@ from collections import Counter
 import nltk
 from datetime import datetime, timedelta
 from scipy.stats import ttest_1samp, ttest_ind, ttest_rel, chi2_contingency
+import statsmodels.api as sm
+from statsmodels.graphics.regressionplots import abline_plot
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+import random
+from sklearn.metrics import r2_score
 
 #from nltk.corpus import stopwords
 #nltk.download('stopwords')
@@ -105,9 +111,42 @@ def wsb_words(date='today'):
     # Close the connection to the database
     conn.close()
 
+
     ################################################################################
     ################################################################################
     # GENERATING ANALYSIS DATA
+
+    # LINEAR REGRESSION
+    
+    redditnormalized = normalize(group_by_timestamp,False)
+    twitternormalized = normalize(twitter_dataframe,True)
+
+    redditlong = reddit_lengthen(redditnormalized)
+    twitterlong = twitter_lengthen(twitternormalized)
+    redditmvol = reddit_merge_volatility(redditlong, yahoo_2_dataframe)
+    twtrmvol = twitter_merge_volatility(twitterlong, yahoo_1_dataframe)
+    twtrmvol['dayplus1vol'] = twtrmvol['dayplus1vol'].astype(float)
+    
+    train, test = train_test_split(twtrmvol)
+    trainX = sm.add_constant(train['num_mentions'])
+    testX = sm.add_constant(test['num_mentions'])
+    model = sm.OLS(train['dayplus1vol'],trainX).fit()
+    trainpredicted = model.predict(trainX)
+    testpredicted = model.predict(testX)
+
+    mse_train = sm.tools.eval_measures.mse(train['dayplus1vol'],trainpredicted)
+    mse_test = sm.tools.eval_measures.mse(test['dayplus1vol'],testpredicted)
+    rsquared_val = r2_score(test['dayplus1vol'],testpredicted)
+    print(f'mse_train {mse_train}, mse_test {mse_test}, rsquared {rsquared_val}')
+
+    ax = twtrmvol.plot(x = 'num_mentions', y = 'dayplus1vol', kind='scatter')
+    abline_plot(model_results=model, ax=ax, color='black', linewidth=2)
+    plt.show()
+
+    K=5
+    #KMEANS
+    print(twtrmvol)
+    #kmeans = KMeans(n_clusters=K).fit(X) #X is 2d array (num_samples, num_features)
 
 
     # HYPOTHESIS 2
@@ -116,7 +155,7 @@ def wsb_words(date='today'):
     red_day_plus_one_col = list(reddit_df['dayplus1vol'])
     red_play_minus_one_col = list(reddit_df['dayminus1vol'])
 
-    red_day_plus_one_col = [abs(x) for x in red_day_plus_one_col]
+    red_day_plus_one_col = [abs(x) for x in red_day_plus_one_col]  #should do this in mergevol function
     red_play_minus_one_col = [abs(x) for x in red_play_minus_one_col]
 
     twitter_timestamp_stock_pairs = twitter_generate_pairs(twitter_dataframe, yahoo_1_dataframe)
@@ -168,7 +207,32 @@ def wsb_words(date='today'):
     ################################################################################
     ################################################################################
 
-    return (df)
+    return df
+
+def normalize(df, isTwitter):
+    df = df.copy()
+    if isTwitter:
+        columnlist = list(df.columns)
+        for i in columnlist[1:]:
+            df[i] = df[i].apply(lambda x: (x - df[i].min()) / (df[i].max() - df[i].min()))
+    else:
+        df.drop(columns=['plug'],inplace=True)
+        columnlist = list(df.columns)
+        for i in columnlist:
+            df[i] = df[i].apply(lambda x: (x - df[i].min()) / (df[i].max() - df[i].min()))
+    return df
+
+def train_test_split(df, train_pct=0.8):
+    """
+    Input:
+        - df: Pandas DataFrame
+        - train_pct: optional, float
+    Output:
+        - train dataframe: Pandas DataFrame
+        - test dataframe: Pandas DataFrame
+    """
+    msk = np.random.rand(len(df)) < train_pct
+    return df[msk], df[~msk]
 
 
 def reddit_generate_pairs(df, yahoo_2_dataframe):
@@ -217,6 +281,12 @@ def reddit_merge_volatility(new_df, yahoo_2_dataframe):
 
     # remove rows were volatility doesn't exist (and is NaN)
     new_df = new_df.dropna()
+    new_df["dayplus1vol"] = new_df["dayplus1vol"].abs()
+    new_df['dayplus1vol'] = new_df['dayplus1vol'].astype(float)
+    redditstats = pd.read_csv('../stocks_2020_market_cap_and_volume.csv')
+    redditstats['Stock'] = redditstats['Stock'].str.lower()
+    redditstats = redditstats.rename(columns={'Stock': 'stock'})
+    new_df = pd.merge(new_df, redditstats, on='stock')
     return new_df
 
 
@@ -241,6 +311,7 @@ def twitter_generate_pairs(df, yahoo_1_dataframe):
                 build_time_stock.append([timestamps[row], stock_list[col], num_mentions])
 
     new_df = pd.DataFrame(build_time_stock, columns=['timestamp', 'stock', 'num_mentions'])
+
     return new_df
 
 
@@ -276,8 +347,48 @@ def twitter_merge_volatility(new_df, yahoo_1_dataframe):
 
     # remove rows were volatility doesn't exist (and is NaN)
     new_df = new_df.dropna()
+    new_df["dayplus1vol"] = new_df["dayplus1vol"].abs()
+    new_df['dayplus1vol'] = new_df['dayplus1vol'].astype(float)
+    twitterstats = pd.read_csv('../stocks_2020_market_cap_and_volume.csv')
+    twitterstats['Stock'] = twitterstats['Stock'].str.lower()
+    twitterstats = twitterstats.rename(columns={'Stock': 'stock'})
+    new_df = pd.merge(new_df, twitterstats, on='stock')
 
     return new_df
+
+def reddit_lengthen(df):
+    list_data = df.values
+    stock_list = df.columns
+    timestamps = df.index
+
+    build_time_stock = []
+    for row in range(len(list_data)):  # for each row
+        for col in range(len(list_data[0])):  # for each col
+            num_mentions = list_data[row][col]
+            build_time_stock.append([timestamps[row], stock_list[col], num_mentions])
+
+    new_df = pd.DataFrame(build_time_stock, columns=['timestamp', 'stock', 'num_mentions'])
+    return new_df
+
+def twitter_lengthen(df):
+    # formatting for twitter is different than for reddit so we had to drop
+    # the timestamps column
+    timestamps = list(df.loc[:, "created_at"])
+    df.drop(columns=df.columns[0], axis=1, inplace=True)
+    list_data = df.values
+    stock_list = df.columns
+
+    build_time_stock = []
+    for row in range(len(list_data)):  # for each row
+        for col in range(len(list_data[0])):  # for each col
+            num_mentions = list_data[row][col]
+            build_time_stock.append([timestamps[row], stock_list[col], num_mentions])
+
+    new_df = pd.DataFrame(build_time_stock, columns=['timestamp', 'stock', 'num_mentions'])
+    return new_df
+
+
+
 
 
 wsb_words()
