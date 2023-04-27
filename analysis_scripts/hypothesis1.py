@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from scipy.stats import ttest_1samp, ttest_ind, ttest_rel, chi2_contingency
 
 
-def wsb_words():
+def run_hypothesis_1():
     df = pd.read_csv('../raw_databases/reddit_wsb.csv')
     df = df.drop(columns=['created', 'id', 'url', 'comms_num'])
     df['body'] = df['body'].fillna("")
@@ -42,7 +42,7 @@ def wsb_words():
     lower_names = ['gme', 'aal', 'aapl', 'amd', 'aph', 'bili', 'clov', 'dkng', 'ecor', 'meta', 'ino', 'jd', 'msft',
                    'mvis', 'cenn', 'plug', 'sndl', 'tlry', 'tsla', 'wkhs', 'zm']
     group_by_timestamp.columns = lower_names
-    group_by_timestamp.to_csv('reddit_with_stocks.csv')  # convert to csv and sql database
+    #group_by_timestamp.to_csv('reddit_with_stocks.csv')  # convert to csv and sql database
 
 
     # twitter and ticker data
@@ -215,4 +215,4 @@ def twitter_merge_volatility(new_df, yahoo_1_dataframe):
     return new_df
 
 
-wsb_words()
+run_hypothesis_1()

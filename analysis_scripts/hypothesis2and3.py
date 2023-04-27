@@ -5,18 +5,10 @@ from collections import Counter
 import nltk
 from datetime import datetime, timedelta
 from scipy.stats import ttest_1samp, ttest_ind, ttest_rel, chi2_contingency
-#from util import train_test_split
-
-#from nltk.corpus import stopwords
-#nltk.download('stopwords')
-#from nltk.tokenize import word_tokenize
-
-import re
-import matplotlib.pyplot as plt
-#from wordcloud import WordCloud, STOPWORDS
+# from util import train_test_split
 
 
-def wsb_words(date='today'):
+def run_hypotheis_2_and_3():
     df = pd.read_csv('../raw_databases/reddit_wsb.csv')
     df = df.drop(columns=['created', 'id', 'url', 'comms_num'])
     df['body'] = df['body'].fillna("")
@@ -24,28 +16,11 @@ def wsb_words(date='today'):
     df = df.drop(columns=['body', 'title'])
     df['timestamp'] = df['timestamp'].apply(lambda x: x[0:10])
 
-    stock = ["GME","AAL","AAPL","ABNB","ACST","AIKI","AMD","AMRN","AMRS","APHA","ASRT","ATNX","ATOS","AVGR","AZN","BIDU","BILI","BIOL","BNGO","BYND","CAN",
-          "CFMS","CHFS","CIDM","CLOV","CRBP","CTRM","CTXR","DFFN","DGLY","DKNG","EBON","ECOR","FB","FCEL","FGEN","FRSX","FUTU","GEVO","HEPA","HIMX",
-          "IDEX","INO","INPX","INSG","INTC","ITRM","JCS","JD","KMPH","KOPN","KXIN","LI","LKCO","MARA","MICT","MIK","MNKD","MRNA","MSFT","MU","MVIS","NAKD","NBRV","NEPT","NKLA","NNDM","NOVN","NXTD","OCGN","OGI","ONTX",
-          "PDD","PERI","PLUG","POWW","PYPL","RDHL","RIOT","ROKU","SHIP","SIRI","SLGG","SNDL","SRNE","SSKN","TELL","TIGR","TLRY","TNXP","TRCH","TSLA","TXMD","UAL","VACQ","VISL","VTRS","VUZI","WIMI","WKHS","ZM"]
 
-    #     stock = pd.read_csv('../input/stock-market-dataset/symbols_valid_meta.csv')
-    #     stock = stock['Symbol'].tolist()
-    #     stock_lower = [x.lower() for x in lista]
-    #     stocks = stock + stock_lower
-    #     words = ["an","the","of","and","a","to","in","is","you","that","it","he","was","for","on","are","as","with","his","they","I","my","than","first","water","been",
-    #          "call","who","oil","its","now","find","long","down","day","did","get","come","made","may","part","some","her","would","make","like","him","into","time","has","look","two","more","write",
-    #          "go","see","number","no","way","could","people","there","use","an","each","which","she","do","how","their","if","will","up","other","about","out","many","then","them","these","so","at","be",
-    #          "this","have","from","or","one","had","by","word","but","not","what","all","were","we","when","your","can","said"]
-    #     for element in stocks:
-    #         if element in words:
-    #             stocks.remove(element)
-
-    #stock = (pd.read_csv('../input/amex-nyse-nasdaq-stock-histories/all_symbols.txt').iloc[:, 0]).to_list()
+    # stock = (pd.read_csv('../input/amex-nyse-nasdaq-stock-histories/all_symbols.txt').iloc[:, 0]).to_list()
     stock = ['GME', 'AAL', 'AAPL', 'AMD', 'APHA', 'BILI',
-                          'CLOV', 'DKNG', 'ECOR', 'FB', 'INO', 'JD', 'MSFT',
-                          'MVIS', 'PLUG', 'CENN', 'SNDL', 'TLRY', 'TSLA', 'WKHS', 'ZM']
-
+             'CLOV', 'DKNG', 'ECOR', 'FB', 'INO', 'JD', 'MSFT',
+             'MVIS', 'PLUG', 'CENN', 'SNDL', 'TLRY', 'TSLA', 'WKHS', 'ZM']
 
     stock_lower = [x.lower() for x in stock]
     words = ["an", "the", "of", "and", "a", "to", "in", "is", "you", "that", "it", "he", "was", "for", "on", "are",
@@ -67,24 +42,15 @@ def wsb_words(date='today'):
         df[i] = df["text"].str.contains(i, regex=False, case=False)
 
     group_by_timestamp = df.groupby("timestamp").agg({i: 'sum' for i in stock})
-    lower_names = [x.lower() for x in stock]
 
     # we changed apha to aph and fb to meta
-    lower_names = ['gme', 'aal', 'aapl', 'amd', 'aph', 'bili', 'clov', 'dkng', 'ecor', 'meta', 'ino', 'jd', 'msft', 'mvis', 'cenn', 'plug', 'sndl', 'tlry', 'tsla', 'wkhs', 'zm']
+    lower_names = ['gme', 'aal', 'aapl', 'amd', 'aph', 'bili', 'clov', 'dkng', 'ecor', 'meta', 'ino', 'jd', 'msft',
+                   'mvis', 'cenn', 'plug', 'sndl', 'tlry', 'tsla', 'wkhs', 'zm']
     group_by_timestamp.columns = lower_names
 
-    # convert to csv and sql database
-    # filtered.to_csv('reddit_with_stocks.csv')
-    
-    #df = pd.read_csv('reddit_with_stocks.csv')
-    conn = sqlite3.connect('cleaned_reddit_twitter_stock.db')
-    c = conn.cursor()
-
-    # Insert reddit data
-    group_by_timestamp.to_sql('reddit_posts_with_ticker', conn, if_exists='replace', index=True)
 
     # twitter and ticker data
-    twitter_dataframe = pd.read_csv('./cleanedtwitterdata.csv')
+    twitter_dataframe = pd.read_csv('../cleaning_scripts/cleanedtwitterdata.csv')
     twitter_dataframe.drop_duplicates(inplace=True)
     twitter_dataframe.drop(columns=['$BBRK.B'], inplace=True)
 
@@ -92,24 +58,16 @@ def wsb_words(date='today'):
     twitter_dataframe.columns = [x.replace('$', '').lower() for x in column_names]
     twitter_dataframe.rename(columns={'fb': 'meta'}, inplace=True)
 
-    twitter_dataframe.to_sql('twitter_posts_with_ticker', conn, if_exists='replace', index=False)
-
     # Insert stock data
-    yahoo_1_dataframe = pd.read_csv('./yahoo_stock_1.csv')
+    yahoo_1_dataframe = pd.read_csv('../cleaning_scripts/yahoo_stock_1.csv')
     yahoo_1_dataframe.drop_duplicates(inplace=True)
-    yahoo_1_dataframe.to_sql('yahoo_stocks_2020', conn, if_exists='replace', index=False)
-    yahoo_2_dataframe = pd.read_csv('./yahoo_stock_2.csv')
+    yahoo_2_dataframe = pd.read_csv('../cleaning_scripts/yahoo_stock_2.csv')
     yahoo_2_dataframe.drop_duplicates(inplace=True)
-    yahoo_2_dataframe.to_sql('yahoo_stock_2021', conn, if_exists='replace', index=False)
 
-
-    # Close the connection to the database
-    conn.close()
 
     ################################################################################
     ################################################################################
     # GENERATING ANALYSIS DATA
-
 
     # HYPOTHESIS 2
     reddit_df = reddit_generate_pairs(group_by_timestamp, yahoo_2_dataframe)
@@ -132,13 +90,13 @@ def wsb_words(date='today'):
 
     tstats, pvalue = ttest_rel(full_plus_one, full_minus_one)
 
-    #"""
+    # """
     print("HYPOTHESIS 2")
     print("T-statistics: ", tstats)
     print("p-value: ", pvalue)
     print("p-value < 0.05", pvalue < 0.05)
     print()
-    #"""
+    # """
 
     ################################################################################
     # HYPOTHESIS 3
@@ -151,8 +109,8 @@ def wsb_words(date='today'):
 
     twitter_df = twitter_timestamp_stock_pairs
     smaller_twitter_df = twitter_df[(twitter_df['stock'] == 'aapl') |
-                                  (twitter_df['stock'] == 'meta') |
-                                  (twitter_df['stock'] == 'msft')]
+                                    (twitter_df['stock'] == 'meta') |
+                                    (twitter_df['stock'] == 'msft')]
 
     list_twit = list(smaller_twitter_df['dayplus1vol'])
 
@@ -185,6 +143,7 @@ def reddit_generate_pairs(df, yahoo_2_dataframe):
     new_df = pd.DataFrame(build_time_stock, columns=['timestamp', 'stock', 'num_mentions'])
     return new_df
 
+
 def reddit_merge_volatility(new_df, yahoo_2_dataframe):
     new_df['timestamp'] = pd.to_datetime(new_df['timestamp'])
     yahoo_2_dataframe['Date'] = pd.to_datetime(yahoo_2_dataframe['Date'])
@@ -213,7 +172,6 @@ def reddit_merge_volatility(new_df, yahoo_2_dataframe):
     # remove rows were volatility doesn't exist (and is NaN)
     new_df = new_df.dropna()
     return new_df
-
 
 
 def twitter_generate_pairs(df, yahoo_1_dataframe):
@@ -275,4 +233,4 @@ def twitter_merge_volatility(new_df, yahoo_1_dataframe):
     return new_df
 
 
-wsb_words()
+run_hypotheis_2_and_3()
