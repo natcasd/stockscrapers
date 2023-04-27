@@ -88,6 +88,8 @@ def wsb_words(date='today'):
 
     # Insert reddit data
     group_by_timestamp.to_sql('reddit_posts_with_ticker', conn, if_exists='replace', index=True)
+    group_by_timestamp.to_csv("group_by_timestamp.csv")
+    print(group_by_timestamp.columns)
 
     # twitter and ticker data
     twitter_dataframe = pd.read_csv('./cleanedtwitterdata.csv')
@@ -99,6 +101,7 @@ def wsb_words(date='today'):
     twitter_dataframe.rename(columns={'fb': 'meta'}, inplace=True)
 
     twitter_dataframe.to_sql('twitter_posts_with_ticker', conn, if_exists='replace', index=False)
+    twitter_dataframe.to_csv("twitter_dataframe.csv")
 
     # Insert stock data
     yahoo_1_dataframe = pd.read_csv('./yahoo_stock_1.csv')
@@ -115,6 +118,9 @@ def wsb_words(date='today'):
     # Close the connection to the database
     conn.close()
 
+    group_by_timestamp = pd.read_csv("group_by_timestamp.csv", index_col=0)
+    group_by_timestamp = group_by_timestamp.astype(float)
+
 
     ################################################################################
     ################################################################################
@@ -130,7 +136,7 @@ def wsb_words(date='today'):
     redditmvol = reddit_merge_volatility(redditlong, yahoo_2_dataframe, yahoo_4_dataframe)
     twtrmvol = twitter_merge_volatility(twitterlong, yahoo_1_dataframe, yahoo_3_dataframe)
     print(twtrmvol.head())
-    twtrmvol['dayplus1vol'] = twtrmvol['dayplus1vol'].astype(float)
+    #twtrmvol['dayplus1vol'] = twtrmvol['dayplus1vol'].astype(float)
     
     train, test = train_test_split(twtrmvol)
     trainX = sm.add_constant(train['num_mentions'])
@@ -159,7 +165,6 @@ def wsb_words(date='today'):
     kmeans = KMeans(n_clusters=K).fit(features2d) #X is 2d array (num_samples, num_features)
     clusters2, centroid_indices2 = kmeans.cluster_centers_, kmeans.labels_
     plot_features_clusters(data=features2d,centroids=clusters2,centroid_indices=centroid_indices2, threeD=False)
-
     bins(twtrmvol)
 
 
@@ -190,11 +195,10 @@ def wsb_words(date='today'):
     tstats, pvalue = ttest_rel(twit_day_plus_one_col, twit_play_minus_one_col)
 
 
-    """
+    
     print("T-statistics: ", tstats)
     print("p-value: ", pvalue)
     print("p-value < 0.05", pvalue < 0.05)
-    """
 
     ################################################################################
     # HYPOTHESIS 3
