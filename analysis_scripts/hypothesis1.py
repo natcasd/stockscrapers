@@ -42,6 +42,7 @@ def run_hypothesis_1():
     lower_names = ['gme', 'aal', 'aapl', 'amd', 'aph', 'bili', 'clov', 'dkng', 'ecor', 'meta', 'ino', 'jd', 'msft',
                    'mvis', 'cenn', 'plug', 'sndl', 'tlry', 'tsla', 'wkhs', 'zm']
     group_by_timestamp.columns = lower_names
+    group_by_timestamp.drop_duplicates(inplace=True)
     #group_by_timestamp.to_csv('reddit_with_stocks.csv')  # convert to csv and sql database
 
 
@@ -57,6 +58,8 @@ def run_hypothesis_1():
     # Gather yahoo data
     yahoo_1_dataframe = pd.read_csv('../cleaning_scripts/yahoo_stock_1.csv')
     yahoo_2_dataframe = pd.read_csv('../cleaning_scripts/yahoo_stock_2.csv')
+    yahoo_1_dataframe.drop_duplicates(inplace=True)
+    yahoo_2_dataframe.drop_duplicates(inplace=True)
 
 
     ################################################################################

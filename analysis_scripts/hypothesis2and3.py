@@ -47,6 +47,7 @@ def run_hypotheis_2_and_3():
     lower_names = ['gme', 'aal', 'aapl', 'amd', 'aph', 'bili', 'clov', 'dkng', 'ecor', 'meta', 'ino', 'jd', 'msft',
                    'mvis', 'cenn', 'plug', 'sndl', 'tlry', 'tsla', 'wkhs', 'zm']
     group_by_timestamp.columns = lower_names
+    group_by_timestamp.drop_duplicates(inplace=True)
 
 
     # twitter and ticker data
