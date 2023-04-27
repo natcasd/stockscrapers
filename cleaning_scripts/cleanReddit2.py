@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 import random
 from sklearn.metrics import r2_score
+from matplotlib import cm
 
 #from nltk.corpus import stopwords
 #nltk.download('stopwords')
@@ -87,6 +88,8 @@ def wsb_words(date='today'):
 
     # Insert reddit data
     group_by_timestamp.to_sql('reddit_posts_with_ticker', conn, if_exists='replace', index=True)
+    group_by_timestamp.to_csv("group_by_timestamp.csv")
+    print(group_by_timestamp.columns)
 
     # twitter and ticker data
     twitter_dataframe = pd.read_csv('./cleanedtwitterdata.csv')
@@ -98,6 +101,7 @@ def wsb_words(date='today'):
     twitter_dataframe.rename(columns={'fb': 'meta'}, inplace=True)
 
     twitter_dataframe.to_sql('twitter_posts_with_ticker', conn, if_exists='replace', index=False)
+    twitter_dataframe.to_csv("twitter_dataframe.csv")
 
     # Insert stock data
     yahoo_1_dataframe = pd.read_csv('./yahoo_stock_1.csv')
@@ -107,9 +111,15 @@ def wsb_words(date='today'):
     yahoo_2_dataframe.drop_duplicates(inplace=True)
     yahoo_2_dataframe.to_sql('yahoo_stock_2021', conn, if_exists='replace', index=False)
 
+    yahoo_3_dataframe = pd.read_csv('./stock1volume.csv')
+    yahoo_4_dataframe = pd.read_csv('./stock2volume.csv')
+
 
     # Close the connection to the database
     conn.close()
+
+    group_by_timestamp = pd.read_csv("group_by_timestamp.csv", index_col=0)
+    group_by_timestamp = group_by_timestamp.astype(float)
 
 
     ################################################################################
@@ -123,9 +133,10 @@ def wsb_words(date='today'):
 
     redditlong = reddit_lengthen(redditnormalized)
     twitterlong = twitter_lengthen(twitternormalized)
-    redditmvol = reddit_merge_volatility(redditlong, yahoo_2_dataframe)
-    twtrmvol = twitter_merge_volatility(twitterlong, yahoo_1_dataframe)
-    twtrmvol['dayplus1vol'] = twtrmvol['dayplus1vol'].astype(float)
+    redditmvol = reddit_merge_volatility(redditlong, yahoo_2_dataframe, yahoo_4_dataframe)
+    twtrmvol = twitter_merge_volatility(twitterlong, yahoo_1_dataframe, yahoo_3_dataframe)
+    print(twtrmvol.head())
+    #twtrmvol['dayplus1vol'] = twtrmvol['dayplus1vol'].astype(float)
     
     train, test = train_test_split(twtrmvol)
     trainX = sm.add_constant(train['num_mentions'])
@@ -145,13 +156,21 @@ def wsb_words(date='today'):
 
     K=5
     #KMEANS
-    print(twtrmvol)
-    #kmeans = KMeans(n_clusters=K).fit(X) #X is 2d array (num_samples, num_features)
+    features3d = twtrmvol[['num_mentions', 'dayplus1vol', 'dailyvolume']].to_numpy()
+    kmeans = KMeans(n_clusters=K).fit(features3d) #X is 2d array (num_samples, num_features)
+    clusters1, centroid_indices1 = kmeans.cluster_centers_, kmeans.labels_
+    plot_features_clusters(data=features3d,centroids=clusters1,centroid_indices=centroid_indices1, threeD=True)
+
+    features2d = twtrmvol[['num_mentions', 'dayplus1vol']].to_numpy()
+    kmeans = KMeans(n_clusters=K).fit(features2d) #X is 2d array (num_samples, num_features)
+    clusters2, centroid_indices2 = kmeans.cluster_centers_, kmeans.labels_
+    plot_features_clusters(data=features2d,centroids=clusters2,centroid_indices=centroid_indices2, threeD=False)
+    bins(twtrmvol)
 
 
     # HYPOTHESIS 2
     reddit_df = reddit_generate_pairs(group_by_timestamp, yahoo_2_dataframe)
-    reddit_df = reddit_merge_volatility(reddit_df, yahoo_2_dataframe)
+    reddit_df = reddit_merge_volatility(reddit_df, yahoo_2_dataframe, yahoo_4_dataframe)
     red_day_plus_one_col = list(reddit_df['dayplus1vol'])
     red_play_minus_one_col = list(reddit_df['dayminus1vol'])
 
@@ -159,7 +178,7 @@ def wsb_words(date='today'):
     red_play_minus_one_col = [abs(x) for x in red_play_minus_one_col]
 
     twitter_timestamp_stock_pairs = twitter_generate_pairs(twitter_dataframe, yahoo_1_dataframe)
-    twitter_timestamp_stock_pairs = twitter_merge_volatility(twitter_timestamp_stock_pairs, yahoo_1_dataframe)
+    twitter_timestamp_stock_pairs = twitter_merge_volatility(twitter_timestamp_stock_pairs, yahoo_1_dataframe, yahoo_3_dataframe)
     twit_day_plus_one_col = list(twitter_timestamp_stock_pairs['dayplus1vol'])
     twit_play_minus_one_col = list(twitter_timestamp_stock_pairs['dayminus1vol'])
 
@@ -176,16 +195,15 @@ def wsb_words(date='today'):
     tstats, pvalue = ttest_rel(twit_day_plus_one_col, twit_play_minus_one_col)
 
 
-    """
+    
     print("T-statistics: ", tstats)
     print("p-value: ", pvalue)
     print("p-value < 0.05", pvalue < 0.05)
-    """
 
     ################################################################################
     # HYPOTHESIS 3
     reddit_df = reddit_generate_pairs(group_by_timestamp, yahoo_2_dataframe)
-    reddit_df = reddit_merge_volatility(reddit_df, yahoo_2_dataframe)
+    reddit_df = reddit_merge_volatility(reddit_df, yahoo_2_dataframe, yahoo_4_dataframe)
     smaller_reddit_df = reddit_df[(reddit_df['stock'] == 'aapl') |
                                   (reddit_df['stock'] == 'meta') |
                                   (reddit_df['stock'] == 'msft')]
@@ -208,6 +226,22 @@ def wsb_words(date='today'):
     ################################################################################
 
     return df
+
+def bins(df):
+    #only for twitter data
+    max = df['Market Cap'].max()
+    bins = [0, 82000000000, 171000000000, 378000000000, max]
+    df['bin'] = pd.cut(df['Market Cap'], bins=5, labels=[1,2,3,4,5])
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(df['num_mentions'], df['dayplus1vol'], df['dailyvolume'], c=df['bin'], cmap='tab10')
+    ax.set_xlabel('# of mentions')
+    ax.set_ylabel('Volatility 1 Day Later')
+    ax.set_zlabel('Volume')
+    ax.set_title('Market Cap Visualization')
+    fig.colorbar(ax.scatter(df['num_mentions'], df['dayplus1vol'], df['dailyvolume'], c=df['bin'], cmap='tab10'))
+    plt.show()
+        
 
 def normalize(df, isTwitter):
     df = df.copy()
@@ -234,6 +268,64 @@ def train_test_split(df, train_pct=0.8):
     msk = np.random.rand(len(df)) < train_pct
     return df[msk], df[~msk]
 
+def plot_features_clusters(data, centroids=None, centroid_indices=None, threeD=True):
+    """
+    Visualizes the song data points and (optionally) the calculated k-means
+    cluster centers.
+    Points with the same color are considered to be in the same cluster.
+
+    Optionally providing centroid locations and centroid indices will color the
+    data points to match their respective cluster and plot the given centroids.
+    Otherwise, only the raw data points will be plotted.
+
+    :param data: 2D numpy array of song data
+    :param centroids: 2D numpy array of centroid locations
+    :param centroid_indices: 1D numpy array of centroid indices for each data point in data
+    :return:
+    """
+    MAX_CLUSTERS = 10
+    cmap = cm.get_cmap('tab10', MAX_CLUSTERS)
+    def plot_songs(fig, color_map=None):
+        if threeD:
+            x, y, z = np.hsplit(data, 3)
+            fig.scatter(x, y, z, c=color_map)
+        else:
+            x, y = np.hsplit(data, 2)
+            fig.scatter(x, y, c=color_map)
+
+    def plot_clusters(fig):
+        if threeD:
+            x, y, z = np.hsplit(centroids, 3)
+            fig.scatter(x, y, z, c="black", marker="x", alpha=1, s=200)
+        else:
+            x, y = np.hsplit(centroids, 2)
+            fig.scatter(x, y, c="black", marker="x", alpha=1, s=200)
+
+    cluster_plot = centroids is not None and centroid_indices is not None
+
+    if threeD:
+        ax = plt.figure(num=1).add_subplot(111, projection='3d')
+    else:
+         ax = plt.figure(num=1).add_subplot(111, projection='rectilinear')
+    colors_s = None
+
+    if cluster_plot:
+        colors_s = [cmap(l / 10) for l in centroid_indices]
+        plot_clusters(ax)
+
+    plot_songs(ax, colors_s)
+
+    ax.set_xlabel('# of mentions')
+    ax.set_ylabel('Volatility 1 Day Later')
+    if threeD:
+        ax.set_zlabel('Average Volume')
+
+    ax.set_title('KMeans Visualization')
+    
+    # Helps visualize clusters
+    plt.gca().invert_xaxis()
+    plt.show()
+
 
 def reddit_generate_pairs(df, yahoo_2_dataframe):
     mean = list(df.mean(axis=0))
@@ -253,10 +345,11 @@ def reddit_generate_pairs(df, yahoo_2_dataframe):
     new_df = pd.DataFrame(build_time_stock, columns=['timestamp', 'stock', 'num_mentions'])
     return new_df
 
-def reddit_merge_volatility(new_df, yahoo_2_dataframe):
+def reddit_merge_volatility(new_df, yahoo_2_dataframe, yahoo_4_dataframe):
     # NATHAN CODE
     new_df['timestamp'] = pd.to_datetime(new_df['timestamp'])
     yahoo_2_dataframe['Date'] = pd.to_datetime(yahoo_2_dataframe['Date'])
+    yahoo_4_dataframe['Date'] = pd.to_datetime(yahoo_4_dataframe['Date'])
     new_df['dayplus1'] = new_df['timestamp'].apply(lambda x: x + timedelta(days=1))
     new_df['dayminus1'] = new_df['timestamp'].apply(lambda x: x - timedelta(days=1))
     new_df['dayplus1vol'] = ''
@@ -279,6 +372,14 @@ def reddit_merge_volatility(new_df, yahoo_2_dataframe):
             else:
                 new_df.loc[index, "dayminus1vol"] = None
 
+        if (rows["stock"] != 'fb' and rows["stock"] != 'nakd' and
+                rows["stock"] != 'apha'):
+            volume = yahoo_4_dataframe.loc[yahoo_4_dataframe["Date"] == rows["timestamp"], [rows["stock"]]]
+            if (len(volume.values) != 0):
+                new_df.loc[index, "dailyvolume"] = volume.values[0, 0]
+            else:
+                new_df.loc[index, "dailyvolume"] = None
+
     # remove rows were volatility doesn't exist (and is NaN)
     new_df = new_df.dropna()
     new_df["dayplus1vol"] = new_df["dayplus1vol"].abs()
@@ -288,8 +389,6 @@ def reddit_merge_volatility(new_df, yahoo_2_dataframe):
     redditstats = redditstats.rename(columns={'Stock': 'stock'})
     new_df = pd.merge(new_df, redditstats, on='stock')
     return new_df
-
-
 
 def twitter_generate_pairs(df, yahoo_1_dataframe):
     # formatting for twitter is different than for reddit so we had to drop
@@ -315,14 +414,16 @@ def twitter_generate_pairs(df, yahoo_1_dataframe):
     return new_df
 
 
-def twitter_merge_volatility(new_df, yahoo_1_dataframe):
+def twitter_merge_volatility(new_df, yahoo_1_dataframe, yahoo_3_dataframe):
     # NATHAN CODE BEGINS HERE
     new_df['timestamp'] = pd.to_datetime(new_df['timestamp'])
     yahoo_1_dataframe['Date'] = pd.to_datetime(yahoo_1_dataframe['Date'])
+    yahoo_3_dataframe['Date'] = pd.to_datetime(yahoo_3_dataframe['Date'])
     new_df['dayplus1'] = new_df['timestamp'].apply(lambda x: x + timedelta(days=1))
     new_df['dayminus1'] = new_df['timestamp'].apply(lambda x: x - timedelta(days=1))
     new_df['dayplus1vol'] = ''
     new_df['dayminus1vol'] = ''
+    print(yahoo_3_dataframe)
 
     for index, rows in new_df.iterrows():
         if (rows["stock"] != 'fb' and rows["stock"] != 'nakd' and
@@ -344,6 +445,16 @@ def twitter_merge_volatility(new_df, yahoo_1_dataframe):
                 new_df.loc[index, "dayminus1vol"] = None
         else:
             new_df.loc[index, "dayplus1vol"] = None
+
+        if (rows["stock"] != 'fb' and rows["stock"] != 'nakd' and
+                rows["stock"] != 'apha' and rows["stock"] != 'spy'):
+            volume = yahoo_3_dataframe.loc[yahoo_3_dataframe["Date"] == rows["timestamp"], [rows["stock"]]]
+            if (len(volume.values) != 0):
+                new_df.loc[index, "dailyvolume"] = volume.values[0, 0]
+            else:
+                new_df.loc[index, "dailyvolume"] = None
+        else:
+            new_df.loc[index, "dailyvolume"] = None
 
     # remove rows were volatility doesn't exist (and is NaN)
     new_df = new_df.dropna()
@@ -386,9 +497,6 @@ def twitter_lengthen(df):
 
     new_df = pd.DataFrame(build_time_stock, columns=['timestamp', 'stock', 'num_mentions'])
     return new_df
-
-
-
 
 
 wsb_words()
