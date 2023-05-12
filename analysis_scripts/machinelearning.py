@@ -87,19 +87,19 @@ def bins(df):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    colors = ['blue', 'red', 'yellow', 'black', 'green']
+    colors = ['tab:blue', 'tab:green', 'tab:purple', 'tab:orange', 'tab:red']
     for label in [0,1,2,3,4]:
         just_label = df.loc[df['bin'] == label]
-        ax.scatter(just_label['num_mentions'], just_label['dayplus1vol'], just_label['dailyvolume'], c=colors[label])
+        ax.scatter(just_label['dayplus1vol'], just_label['num_mentions'], just_label['dailyvolume'], c=colors[label])
 
     #0 - 520Billion
     # 2.6 Trill
     # 0 - 100 mill,  100mill - 500 mill, 500 mill - 1 bil
 
     plt.legend(["0 - 520B", "520B - 1.04T", "1.04T - 1.56T", "1.56T-2.08T", "2.08T - 2.6T"])
-    ax.set_xlabel('Number of mentions (normalized)')
-    ax.set_ylabel('Volatility 1 Day Later (%)')
-    ax.set_zlabel('Volume')
+    ax.set_ylabel('# of Mentions (Normalized)')
+    ax.set_xlabel('Volatility 1 Day Later (%)')
+    ax.set_zlabel('Volume (100M)')
     #ax.set_title('Market Cap Visualization')
     plt.show()
     """ 
@@ -169,10 +169,10 @@ def plot_features_clusters(data, centroids=None, centroid_indices=None, threeD=T
 
     plot_songs(ax, colors_s)
 
-    ax.set_xlabel('# of mentions')
-    ax.set_ylabel('Volatility 1 Day Later')
+    ax.set_xlabel('# of Mentions (Normalized)')
+    ax.set_ylabel('Volatility 1 Day Later (%)')
     if threeD:
-        ax.set_zlabel('Average Volume')
+        ax.set_zlabel('Volume (100M)')
 
     ax.set_title('KMeans Visualization')
     
