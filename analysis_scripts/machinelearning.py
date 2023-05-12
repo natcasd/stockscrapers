@@ -82,7 +82,27 @@ def bins(df):
     max = df['Market Cap'].max()
     bins = [0, 82000000000, 171000000000, 378000000000, max]
     df['bin'] = pd.cut(df['Market Cap'], bins=5, labels=[0,1,2,3,4])
+    #print(df['bin'])
 
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    colors = ['blue', 'red', 'yellow', 'black', 'green']
+    for label in [0,1,2,3,4]:
+        just_label = df.loc[df['bin'] == label]
+        ax.scatter(just_label['num_mentions'], just_label['dayplus1vol'], just_label['dailyvolume'], c=colors[label])
+
+    #0 - 520Billion
+    # 2.6 Trill
+    # 0 - 100 mill,  100mill - 500 mill, 500 mill - 1 bil
+
+    plt.legend(["0 - 520B", "520B - 1.04T", "1.04T - 1.56T", "1.56T-2.08T", "2.08T - 2.6T"])
+    ax.set_xlabel('Number of mentions (normalized)')
+    ax.set_ylabel('Volatility 1 Day Later (%)')
+    ax.set_zlabel('Volume')
+    #ax.set_title('Market Cap Visualization')
+    plt.show()
+    """ 
     MAX_CLUSTERS = 10
     cmap = cm.get_cmap('tab10', MAX_CLUSTERS)
     colors = [cmap(l / 10) for l in df['bin']]
@@ -90,13 +110,13 @@ def bins(df):
     ax = fig.add_subplot(111, projection='3d')
 
     ax.scatter(df['num_mentions'], df['dayplus1vol'], df['dailyvolume'], c=colors)
-    ax.set_xlabel('# of mentions')
-    ax.set_ylabel('Volatility 1 Day Later')
+    ax.set_xlabel('Number of mentions')
+    ax.set_ylabel('Volatility 1 Day Later (%)')
     ax.set_zlabel('Volume')
     ax.set_title('Market Cap Visualization')
     fig.colorbar(ax.scatter(df['num_mentions'], df['dayplus1vol'], df['dailyvolume'], c=colors))
     plt.show()
-        
+    """
 
 def normalize(df, isTwitter):
     df = df.copy()
