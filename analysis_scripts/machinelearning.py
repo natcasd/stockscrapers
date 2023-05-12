@@ -47,16 +47,20 @@ def lin_reg(twtrmvol):
     trainX = sm.add_constant(train['num_mentions'])
     testX = sm.add_constant(test['num_mentions'])
     model = sm.OLS(train['dayplus1vol'],trainX).fit()
+    print(model.summary())
     trainpredicted = model.predict(trainX)
     testpredicted = model.predict(testX)
 
     mse_train = sm.tools.eval_measures.mse(train['dayplus1vol'],trainpredicted)
     mse_test = sm.tools.eval_measures.mse(test['dayplus1vol'],testpredicted)
     rsquared_val = r2_score(test['dayplus1vol'],testpredicted)
-    print(f'mse_train: {round(mse_train,2)}, mse_test: {round(mse_test,2)}, rsquared: {round(rsquared_val,2)}')
+    print(f'mse_train: {round(mse_train,2)}, mse_test: {round(mse_test,2)}, rsquared_test: {round(rsquared_val,2)}')
 
-    ax = twtrmvol.plot(x = 'num_mentions', y = 'dayplus1vol', kind='scatter')
-    abline_plot(model_results=model, ax=ax, color='black', linewidth=2)
+    ax = twtrmvol.plot(x = 'num_mentions', y = 'dayplus1vol', kind='scatter', s=10)
+    ax.set_xlabel('Number of mentions (normalized)')
+    ax.set_ylabel('Stock Volatility 1 day later (%)')
+    #ax.set_title("Analysis of Social Media Mentions vs. Stock Volatility", fontweight='bold')
+    abline_plot(model_results=model, ax=ax, color='black', linewidth=1.3)
     plt.show()
 
 
@@ -77,15 +81,20 @@ def bins(df):
     #colors points based on bin of market cap that it falls into
     max = df['Market Cap'].max()
     bins = [0, 82000000000, 171000000000, 378000000000, max]
-    df['bin'] = pd.cut(df['Market Cap'], bins=5, labels=[1,2,3,4,5])
+    df['bin'] = pd.cut(df['Market Cap'], bins=5, labels=[0,1,2,3,4])
+
+    MAX_CLUSTERS = 10
+    cmap = cm.get_cmap('tab10', MAX_CLUSTERS)
+    colors = [cmap(l / 10) for l in df['bin']]
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(df['num_mentions'], df['dayplus1vol'], df['dailyvolume'], c=df['bin'], cmap='tab10')
+
+    ax.scatter(df['num_mentions'], df['dayplus1vol'], df['dailyvolume'], c=colors)
     ax.set_xlabel('# of mentions')
     ax.set_ylabel('Volatility 1 Day Later')
     ax.set_zlabel('Volume')
     ax.set_title('Market Cap Visualization')
-    fig.colorbar(ax.scatter(df['num_mentions'], df['dayplus1vol'], df['dailyvolume'], c=df['bin'], cmap='tab10'))
+    fig.colorbar(ax.scatter(df['num_mentions'], df['dayplus1vol'], df['dailyvolume'], c=colors))
     plt.show()
         
 
