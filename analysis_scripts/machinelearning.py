@@ -37,9 +37,28 @@ def main():
     redditmvol = reddit_merge_volatility(redditlong, yahoo_2_dataframe, yahoo_4_dataframe)
     twtrmvol = twitter_merge_volatility(twitterlong, yahoo_1_dataframe, yahoo_3_dataframe)
     
-    lin_reg(twtrmvol)
-    kmeans(twtrmvol)
-    bins(twtrmvol)
+    #lin_reg(twtrmvol)
+    #kmeans(twtrmvol)
+    #bins(twtrmvol)
+    piecharts(group_by_timestamp,twitter_dataframe)
+
+def piecharts(group_by_timestamp,twitter_dataframe):
+    group_by_timestamp = group_by_timestamp.rename(columns={'gme' : 'Gamestop', 'bili' : 'Bilibili', 'meta' : 'Meta', 'ecor' : 'electroCore', 'ino' : 'Inovio', 'tsla' : 'Tesla', 'sndl' : 'SNDL', 'amd' : 'Advanced Micro Devices', 'clov' : 'Clover'})
+    twitter_dataframe = twitter_dataframe.rename(columns={'spy' : 'S&P 500', 'aapl' : 'Apple', 't' : 'AT&T', 'amzn' : 'Amazon', 'meta' : 'Meta', 'msft' : 'Microsoft', 'v' : 'Visa', 'goog' : 'Google', 'dis' : 'Disney'})
+    redditsums = group_by_timestamp.sum(axis=0)
+    twitter_dataframe = twitter_dataframe.drop('created_at', axis=1)
+    twittersums = twitter_dataframe.sum(axis=0)
+    topreddit = redditsums.nlargest(9)
+    toptwitter = twittersums.nlargest(9)
+    otherredditsum = redditsums.drop(topreddit.index).sum()
+    othertwittersum = twittersums.drop(toptwitter.index).sum()
+    topreddit = pd.concat([topreddit, pd.Series({'Other': otherredditsum})])
+    toptwitter = pd.concat([toptwitter, pd.Series({'Other': othertwittersum})])
+
+    topreddit.plot.pie(autopct='%1.1f%%', ylabel=' ', startangle=90, pctdistance=1.15, labeldistance=1.3)
+    plt.show()
+    toptwitter.plot.pie(autopct='%1.1f%%', ylabel=' ', startangle=90, pctdistance=0.7)
+    plt.show()
 
 
 def lin_reg(twtrmvol):
@@ -53,8 +72,9 @@ def lin_reg(twtrmvol):
 
     mse_train = sm.tools.eval_measures.mse(train['dayplus1vol'],trainpredicted)
     mse_test = sm.tools.eval_measures.mse(test['dayplus1vol'],testpredicted)
+    rsquared_train = r2_score(train['dayplus1vol'],trainpredicted)
     rsquared_val = r2_score(test['dayplus1vol'],testpredicted)
-    print(f'mse_train: {round(mse_train,2)}, mse_test: {round(mse_test,2)}, rsquared_test: {round(rsquared_val,2)}')
+    print(f'mse_train: {round(mse_train,2)}, mse_test: {round(mse_test,3)}, rsquared_train: {round(rsquared_train,3)}, rsquared_test: {round(rsquared_val,2)}')
 
     ax = twtrmvol.plot(x = 'num_mentions', y = 'dayplus1vol', kind='scatter', s=10)
     ax.set_xlabel('Number of mentions (normalized)')
@@ -80,6 +100,7 @@ def bins(df):
     #plots twitter data in 3d scatter plot #mentions, volatility, and daily volume , 
     #colors points based on bin of market cap that it falls into
     max = df['Market Cap'].max()
+    print(max)
     bins = [0, 82000000000, 171000000000, 378000000000, max]
     df['bin'] = pd.cut(df['Market Cap'], bins=5, labels=[0,1,2,3,4])
 
@@ -89,13 +110,14 @@ def bins(df):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    ax.scatter(df['num_mentions'], df['dayplus1vol'], df['dailyvolume'], c=colors)
-    ax.set_xlabel('# of mentions')
-    ax.set_ylabel('Volatility 1 Day Later')
-    ax.set_zlabel('Volume')
-    ax.set_title('Market Cap Visualization')
-    fig.colorbar(ax.scatter(df['num_mentions'], df['dayplus1vol'], df['dailyvolume'], c=colors))
-    plt.show()
+    
+    # ax.scatter(df['num_mentions'], df['dayplus1vol'], df['dailyvolume'], c=colors)
+    # ax.set_xlabel('# of mentions')
+    # ax.set_ylabel('Volatility 1 Day Later')
+    # ax.set_zlabel('Volume')
+    # ax.set_title('Market Cap Visualization')
+    # fig.colorbar(ax.scatter(df['num_mentions'], df['dayplus1vol'], df['dailyvolume'], c=colors))
+    # plt.show()
         
 
 def normalize(df, isTwitter):
