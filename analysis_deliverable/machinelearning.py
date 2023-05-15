@@ -1,10 +1,6 @@
 import pandas as pd
 import numpy as np
-import sqlite3
-from collections import Counter
-import nltk
 from datetime import datetime, timedelta
-from scipy.stats import ttest_1samp, ttest_ind, ttest_rel, chi2_contingency
 import statsmodels.api as sm
 from statsmodels.graphics.regressionplots import abline_plot
 import matplotlib.pyplot as plt
@@ -15,6 +11,10 @@ from matplotlib import cm
 
 
 def main():
+    """
+    Collect all the data and run all the visualizations
+    :return: Nothing
+    """
     group_by_timestamp = pd.read_csv("../cleaning_scripts/group_by_timestamp.csv", index_col=0)
     group_by_timestamp.drop_duplicates(inplace=True)
     group_by_timestamp = group_by_timestamp.astype(float)
@@ -36,13 +36,21 @@ def main():
     twitterlong = twitter_lengthen(twitternormalized)
     redditmvol = reddit_merge_volatility(redditlong, yahoo_2_dataframe, yahoo_4_dataframe)
     twtrmvol = twitter_merge_volatility(twitterlong, yahoo_1_dataframe, yahoo_3_dataframe)
-    
-    #lin_reg(twtrmvol)
-    #kmeans(twtrmvol)
-    #bins(twtrmvol)
+
+    # run all the different visualizations
+    lin_reg(twtrmvol)
+    kmeans(twtrmvol)
+    bins(twtrmvol)
     piecharts(group_by_timestamp,twitter_dataframe)
 
 def piecharts(group_by_timestamp,twitter_dataframe):
+    """
+    Generate pie chart for distribution of mentions across companies in the Reddit and
+    Twitter datasets.
+    :param group_by_timestamp: Reddit dataset
+    :param twitter_dataframe: Twitter dataset
+    :return: Nothing
+    """
     group_by_timestamp = group_by_timestamp.rename(columns={'gme' : 'Gamestop', 'bili' : 'Bilibili', 'meta' : 'Meta', 'ecor' : 'electroCore', 'ino' : 'Inovio', 'tsla' : 'Tesla', 'sndl' : 'SNDL', 'amd' : 'Advanced Micro Devices', 'clov' : 'Clover'})
     twitter_dataframe = twitter_dataframe.rename(columns={'spy' : 'S&P 500', 'aapl' : 'Apple', 't' : 'AT&T', 'amzn' : 'Amazon', 'meta' : 'Meta', 'msft' : 'Microsoft', 'v' : 'Visa', 'goog' : 'Google', 'dis' : 'Disney'})
     redditsums = group_by_timestamp.sum(axis=0)
@@ -55,13 +63,19 @@ def piecharts(group_by_timestamp,twitter_dataframe):
     topreddit = pd.concat([topreddit, pd.Series({'Other': otherredditsum})])
     toptwitter = pd.concat([toptwitter, pd.Series({'Other': othertwittersum})])
 
-    topreddit.plot.pie(autopct='%1.1f%%', ylabel=' ', startangle=90, pctdistance=1.15, labeldistance=1.3)
+    topreddit.plot.pie(title='Distribution of Company Mentions on Reddit', autopct='%1.1f%%', ylabel=' ', startangle=90, pctdistance=1.15, labeldistance=1.3)
     plt.show()
-    toptwitter.plot.pie(autopct='%1.1f%%', ylabel=' ', startangle=90, pctdistance=0.7)
+    toptwitter.plot.pie(title='Distribution of Company Mentions on Twiter', autopct='%1.1f%%', ylabel=' ', startangle=90, pctdistance=0.7)
     plt.show()
 
 
 def lin_reg(twtrmvol):
+    """
+    Run the linear regression on Twitter data and display graph
+    :param twtrmvol: dataframe of twitter
+    :return: Nothing
+    """
+
     train, test = train_test_split(twtrmvol)
     trainX = sm.add_constant(train['num_mentions'])
     testX = sm.add_constant(test['num_mentions'])
@@ -85,6 +99,11 @@ def lin_reg(twtrmvol):
 
 
 def kmeans(twtrmvol):
+    """
+    Run k-means on the twitter dataset
+    :param twtrmvol: Twitter dataset
+    :return: nothing
+    """
     K=5
     features3d = twtrmvol[['num_mentions', 'dayplus1vol', 'dailyvolume']].to_numpy()
     kmeans = KMeans(n_clusters=K).fit(features3d) #X is 2d array (num_samples, num_features)
@@ -97,13 +116,15 @@ def kmeans(twtrmvol):
 
 
 def bins(df):
-    #plots twitter data in 3d scatter plot #mentions, volatility, and daily volume , 
-    #colors points based on bin of market cap that it falls into
+    """
+    Plots twitter data in 3d scatter plot of mentions, volatility, and daily volume
+    Colors points based on bin of market cap that it falls into
+    :param df: pandas dataframe of the Twitter Data
+    """
     max = df['Market Cap'].max()
     print(max)
     bins = [0, 82000000000, 171000000000, 378000000000, max]
-    df['bin'] = pd.cut(df['Market Cap'], bins=5, labels=[0,1,2,3,4])
-    #print(df['bin'])
+    df['bin'] = pd.cut(df['Market Cap'], bins=5, labels=[0,1,2,3,4])  # split the dataframe into 5 marketcap groups
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -123,23 +144,15 @@ def bins(df):
     ax.set_zlabel('Volume (100M)')
     #ax.set_title('Market Cap Visualization')
     plt.show()
-    """ 
-    MAX_CLUSTERS = 10
-    cmap = cm.get_cmap('tab10', MAX_CLUSTERS)
-    colors = [cmap(l / 10) for l in df['bin']]
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
 
-    ax.scatter(df['num_mentions'], df['dayplus1vol'], df['dailyvolume'], c=colors)
-    ax.set_xlabel('Number of mentions')
-    ax.set_ylabel('Volatility 1 Day Later (%)')
-    ax.set_zlabel('Volume')
-    ax.set_title('Market Cap Visualization')
-    fig.colorbar(ax.scatter(df['num_mentions'], df['dayplus1vol'], df['dailyvolume'], c=colors))
-    plt.show()
-    """
 
 def normalize(df, isTwitter):
+    """
+    Normalize number of mentions in twitter dataset
+    :param df: Dataframe of Twitter
+    :param isTwitter: Boolean is Twitter
+    :return: dataframe
+    """
     df = df.copy()
     if isTwitter:
         columnlist = list(df.columns)
@@ -153,10 +166,24 @@ def normalize(df, isTwitter):
     return df
 
 def train_test_split(df, train_pct=0.8):
+    """
+    Split the data
+    :param df: Dataframe
+    :param train_pct: train size
+    :return: train and test dataframes
+    """
     msk = np.random.rand(len(df)) < train_pct
     return df[msk], df[~msk]
 
 def plot_features_clusters(data, centroids=None, centroid_indices=None, threeD=True):
+    """
+    Plot kmenas cluster
+    :param data:
+    :param centroids:
+    :param centroid_indices:
+    :param threeD:
+    :return: Nothing
+    """
 
     MAX_CLUSTERS = 10
     cmap = cm.get_cmap('tab10', MAX_CLUSTERS)
@@ -203,7 +230,14 @@ def plot_features_clusters(data, centroids=None, centroid_indices=None, threeD=T
     
 
 def reddit_merge_volatility(new_df, yahoo_2_dataframe, yahoo_4_dataframe):
-    #merges volatility, market cap, and volume data from yahoo and external with reddit mention data
+    """
+    Merges volatility, market cap, and volume data from yahoo and external with reddit mention data
+    :param new_df:
+    :param yahoo_2_dataframe:
+    :param yahoo_4_dataframe:
+    :return: new dataframe
+    """
+
     new_df['timestamp'] = pd.to_datetime(new_df['timestamp'])
     yahoo_2_dataframe['Date'] = pd.to_datetime(yahoo_2_dataframe['Date'])
     yahoo_4_dataframe['Date'] = pd.to_datetime(yahoo_4_dataframe['Date'])
@@ -249,7 +283,10 @@ def reddit_merge_volatility(new_df, yahoo_2_dataframe, yahoo_4_dataframe):
 
 
 def twitter_merge_volatility(new_df, yahoo_1_dataframe, yahoo_3_dataframe):
-    #merges volatility, market cap, and volume data from yahoo and external with twitter mention data
+    """
+    Merges volatility, market cap, and volume data from yahoo and external with twitter mention data
+    """
+
     new_df['timestamp'] = pd.to_datetime(new_df['timestamp'])
     yahoo_1_dataframe['Date'] = pd.to_datetime(yahoo_1_dataframe['Date'])
     yahoo_3_dataframe['Date'] = pd.to_datetime(yahoo_3_dataframe['Date'])
@@ -301,7 +338,10 @@ def twitter_merge_volatility(new_df, yahoo_1_dataframe, yahoo_3_dataframe):
     return new_df
 
 def reddit_lengthen(df):
-    #flattens reddit mention dataset into 1 column
+    """
+    Flattens reddit mention dataset into 1 column
+    """
+
     list_data = df.values
     stock_list = df.columns
     timestamps = df.index
@@ -316,8 +356,13 @@ def reddit_lengthen(df):
     return new_df
 
 def twitter_lengthen(df):
-    # formatting for twitter is different than for reddit so we had to drop
+    """
+    Formatting for twitter is different than for reddit so we had to drop
     # the timestamps column
+    :param df: Twitter Dataframe
+    :return: new dataframe
+    """
+
     timestamps = list(df.loc[:, "created_at"])
     df.drop(columns=df.columns[0], axis=1, inplace=True)
     list_data = df.values
@@ -333,4 +378,5 @@ def twitter_lengthen(df):
     return new_df
 
 
-main()
+main()  # run the whole program
+
