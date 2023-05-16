@@ -93,7 +93,7 @@ def lin_reg(twtrmvol):
     ax = twtrmvol.plot(x = 'num_mentions', y = 'dayplus1vol', kind='scatter', s=10)
     ax.set_xlabel('Number of mentions (normalized)')
     ax.set_ylabel('Stock Volatility 1 day later (%)')
-    #ax.set_title("Analysis of Social Media Mentions vs. Stock Volatility", fontweight='bold')
+    ax.set_title("Analysis of Social Media Mentions vs. Stock Volatility", fontweight='bold')
     abline_plot(model_results=model, ax=ax, color='black', linewidth=1.3)
     plt.show()
 
@@ -142,7 +142,7 @@ def bins(df):
     ax.set_ylabel('# of Mentions (Normalized)')
     ax.set_xlabel('Volatility 1 Day Later (%)')
     ax.set_zlabel('Volume (100M)')
-    #ax.set_title('Market Cap Visualization')
+    ax.set_title('Market Cap Visualization')
     plt.show()
 
 
